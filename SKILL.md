@@ -1,12 +1,12 @@
 ---
 name: iui-evaluator
 description: >
-  Evaluate UI screenshots against Intelligent User Interface (IUI) criteria from academic literature. Trigger when a user uploads screenshots and asks for an IUI evaluation, UX intelligence audit, or AI interface review. Also trigger for: "how intelligent is this UI?", "does this qualify as an IUI?", "evaluate this design for intelligence", "does this use AI well?", "is this a good AI product?", "review the AI UX of this", "what IUI improvements would you suggest?". Conducts structured elicitation (domain, audience, persona), scores across seven research-grounded dimensions, produces a scored report with improvement recommendations and before/after wireframe sketches as a PDF. Requires screenshots as input — for automatic URL capture use the companion iui-evaluator-code Claude Code skill.
+  Evaluate UI screenshots against Intelligent User Interface (IUI) criteria from academic literature. Trigger when a user uploads screenshots and asks for an IUI evaluation, UX intelligence audit, or AI interface review. Also trigger for: "how intelligent is this UI?", "does this qualify as an IUI?", "evaluate this design for intelligence", "does this use AI well?", "is this a good AI product?", "review the AI UX of this", "what IUI improvements would you suggest?". Conducts structured elicitation (domain, audience, persona), scores across seven research-grounded dimensions, produces a scored report with improvement recommendations and before/after wireframe sketches as a PDF. Works purely from screenshots and supporting product documentation.
 ---
 
 # IUI Evaluator Skill
 
-Evaluate UI prototypes, screenshots, and Figma designs against Intelligent User Interface (IUI) criteria drawn from the academic literature (Maybury & Wahlster 1998; Jameson 2003; Höök 1999; Brdnik et al. 2022; Springer 2015).
+Evaluate UI screenshots and prototypes against Intelligent User Interface (IUI) criteria drawn from the academic literature (Maybury & Wahlster 1998; Jameson 2003; Höök 1999; Brdnik et al. 2022; Springer 2015).
 
 Read `/references/iui-rubric.md` before scoring — it contains the full dimension anchors, domain weighting guidance, and band thresholds.
 
@@ -25,17 +25,24 @@ Read `/references/iui-rubric.md` before scoring — it contains the full dimensi
 
 Do not skip or merge steps — each is a distinct turn that requires the user to respond.
 
-**Input requirement:** This skill works from screenshots only. For automatic capture from URLs (Lovable, Bolt, Figma Make, Figma design files, any live web app), use the companion `iui-evaluator-code` skill for Claude Code.
+**Input requirement:** This skill works purely from screenshots and supporting product documentation (persona docs, market notes, PRDs). Live URLs, design-tool links, and automated capture are out of scope — if a user provides a URL, ask for screenshots instead (see Step 3b).
 
 ---
 
-## Step 1: Elicitation
+## Step 1: Elicitation — interactive prompt first, prose fallback
 
-Ask all three questions in a single conversational message. Do not use a numbered list or form — keep the tone direct and professional:
+If an interactive question tool is available in the environment (e.g. `ask_user_input` — renders tappable option cards), **always use it for elicitation instead of asking in prose.** Construct exactly two questions in a single call:
+
+1. **Domain** (single select). Infer the three most likely domains from the screenshots and conversation, and offer those three plus "Something else" as the fourth option. Never present a generic unordered domain list — the inferred options show the user you've already looked at their frames.
+2. **Why you're evaluating this** (single select): "My own product" / "Competitive benchmark" / "Client audit" / "Just exploring".
+
+Interactive option tools cannot take typed answers, so **never put the persona or audience in the pop-up.** Instead, after the pop-up response arrives, draft them yourself — a one-line audience description and a one-line persona (name, age, role, goal, one key frustration) inferred from the domain, the screenshots, and any attached documentation — and present both in the Step 2 context card for confirmation. Turning persona capture from a writing task into a confirm-or-edit decision is the intended experience.
+
+If no interactive tool is available, fall back to a single conversational message. Do not use a numbered list or form — keep the tone direct and professional:
 
 > "Before I evaluate this interface, I need a little context. Which domain does it belong to — health, education, finance, productivity, consumer, or something else? Who are the primary users, and do you have a quick persona sketch (even just a name, role, and one key frustration)?"
 
-If the user has already provided any of this (earlier in the conversation, or in their initial message), extract it silently and pre-fill Step 2 without asking again.
+If the user has already provided any of this (earlier in the conversation, or in their initial message), extract it silently, skip the corresponding question, and pre-fill Step 2 without asking again. The 3c evidence-gap questions are free-text by nature — always ask those conversationally, never through the option tool.
 
 ---
 
@@ -52,12 +59,14 @@ Format the card exactly like this:
 | Field | Value |
 |-------|-------|
 | Interface | [inferred name / description] |
-| Input type | [screenshot / Figma URL / live URL / description] |
+| Input type | [screenshots / screenshots + documentation / description] |
 | Domain | [inferred domain] |
 | Target audience | [inferred audience] |
 | Persona | [inferred or user-provided persona] |
 
 Does this look right? Let me know if you'd like to adjust anything — otherwise I'll proceed with the evaluation.
+
+Where the interactive option tool is available, pair the card with a tappable confirm — "Looks right — proceed" / "Let me adjust something" — instead of leaving confirmation as an open question. Edits arrive as a normal typed message.
 
 ---
 
@@ -69,143 +78,42 @@ Wait for the user to confirm or correct before moving to Step 3. If they confirm
 
 Accept input in any of these forms, then follow the resolution path below before proceeding to Step 4.
 
-### 3a: Uploaded screenshots
+### 3a: Uploaded screenshots — the primary input
 
-The ideal input. Proceed directly to Step 4 with no further action needed. Note how many frames were provided and what flows they cover.
+The required input. Note how many frames were provided and what flows they cover (onboarding, core task, feedback, return). If coverage is thin — a single hero screen, or no post-task screens — say so and invite more frames before scoring, but do not block on it.
 
-If the UI was uploaded before Step 1, proceed directly from Step 2 to Step 4 once the context card is confirmed.
+If the UI was uploaded before Step 1, proceed directly from Step 2 to the 3c evidence check once the context card is confirmed.
 
----
-
-### 3b: URL input — resolution path
-
-When the user provides a URL, determine which path applies:
-
-#### Path 1 — Standard Figma design file (`figma.com/design/` or `figma.com/file/`)
-
-Use the Figma REST API to retrieve the node tree. This gives richer IUI signal than screenshots: component names, interaction definitions, layout structure, and full IA — all without needing the user to export anything.
-
-Tell the user:
-
-> "This is a Figma design file — I can analyse it directly via the Figma API, which is richer than screenshots. Two quick things before we start:
->
-> **1. Token:** Go to figma.com → your profile (top left) → Settings → Security → Personal access tokens → Generate new token. Any Figma account works — free tier is fine, no paid seat needed.
->
-> **2. File sharing:** Make sure the file is set to 'anyone with the link can view' (check via Share in Figma). If it's restricted to specific people the API won't be able to read it.
->
-> Paste your token here when ready. I won't store it — keep it in your password manager for next time."
-
-**Token safety — important:** Do NOT store the Figma token in Claude's memory or suggest doing so. A personal access token has read access to all files in the user's Figma account. If the user asks whether you can remember it, say:
-
-> "I won't store your token — it has broad access to your Figma account and shouldn't sit in an external database. Keep it in your password manager and paste it each time. It takes a few seconds."
-
-Once you have the token, call:
-
-```
-GET https://api.figma.com/v1/files/{FILE_KEY}
-Headers: X-Figma-Token: {TOKEN}
-```
-
-Extract `FILE_KEY` from the URL: `figma.com/design/{FILE_KEY}/...`
-
-From the response JSON, analyse:
-- `document.children` — page and frame structure (IA)
-- Component names — naming conventions signal intent (e.g. `UserProfile`, `AdaptiveFeed`, `ConfidenceSlider`)
-- `interactions` on nodes — what triggers what (reveals proactivity and control affordances)
-- Text content — UI copy, labels, placeholder text
-- Constraints and layout — responsiveness signals
-
-Score against IUI dimensions using this structural evidence, flagging that behaviour is inferred from design intent rather than observed.
+**Supporting documentation is a first-class input alongside screenshots.** If the user attaches a persona document, target-market notes, a PRD, or the companion capture template with its "What happened next?" fields filled in, read it fully and treat its contents as user-confirmed evidence. Proactively invite it once: documentation calibrates scoring to the product's actual users and resolves transition behaviour that screenshots cannot show.
 
 ---
 
-#### Path 2 — Figma Make (`figma.com/make/`)
+### 3b: Other inputs
 
-Figma Make generates a live React app hosted behind Figma's auth wall. `web_fetch` is blocked by robots.txt and the Figma REST API does not apply.
+**URLs are out of scope.** If the user provides a live URL or any design-tool link, do not attempt to fetch or analyse it. Explain briefly that the skill evaluates from screenshots, and ask them to capture 6–8 frames covering the main flow (`Cmd + Shift + 4` on Mac, `Windows + Shift + S` on Windows) — landing, onboarding, core task, any adaptive moment, results, and return state — then upload them here.
 
-Tell the user immediately — do not ask for screenshots or a description first:
-
-> "Figma Make generates a live React app behind Figma's auth layer — I can't fetch it directly. I have an auto-capture script that handles this: it opens a headless browser, fully renders the app, navigates through your interaction flow automatically, and saves screenshots for me to evaluate. About 2 minutes to run.
->
-> Do you have Node.js installed? If yes, I'll give you three commands and you'll be done. If not, I can walk you through installing it first — it's a one-time setup."
-
-Immediately give them the setup instructions — do not wait for them to confirm Node.js knowledge. Use the same step-by-step format as Path 3 (open terminal → install tools → save and run script → upload screenshots). Follow immediately with the full contents of `/capture/capture.js` in a code block.
-
-**Note:** Claude cannot run this script automatically from the chat interface — it has no access to the user's terminal or local machine. If the user asks why it can't run automatically, explain this honestly: that capability requires Claude Code (the terminal tool), not claude.ai chat. A Claude Code version of this skill — where Playwright installs and runs automatically on consent — is on the roadmap.
+**Description-only evaluation** is accepted as a last-resort fallback when the user cannot provide screenshots. Flag clearly that all scores are inferred from description alone and conservative scoring applies throughout.
 
 ---
 
-#### Path 3 — Bolt (`bolt.new`) or Lovable (`lovable.app`) or any deployed React/JS app
-
-These are public URLs but render client-side — `web_fetch` returns a JS shell with no meaningful UI content.
-
-Attempt `web_fetch` on the URL. Then:
-
-**If the fetch returns meaningful UI text** (nav labels, headings, button copy, form fields — more than ~200 words of visible content): proceed to score from that, noting it is HTML-structural evidence only.
-
-**If the fetch returns a near-empty shell** (which is the common case for Lovable and Bolt): do NOT fall back to asking for screenshots or a description. Instead, give the user the capture script immediately with full setup instructions. Present it like this:
-
----
-
-> "This app is built in React — the page source is empty until a real browser runs it, which is why I can't read it directly. I have a capture script that opens a headless (invisible) browser, renders your app fully, clicks through the main flow automatically, and saves screenshots for me to evaluate. Here's how to run it:
->
-> **Step 1 — Open your terminal**
-> - **Mac:** Press `Cmd + Space`, type *Terminal*, press Enter
-> - **Windows:** Press `Windows key`, type *cmd* or *PowerShell*, press Enter
->
-> **Step 2 — Install the required tools** (one-time only)
-> Paste this into your terminal and press Enter. It installs Node.js if you don't have it, then installs Playwright (the browser automation tool):
->
-> ```
-> npx --yes playwright install chromium
-> ```
->
-> If you see an error saying `npx` is not found, Node.js isn't installed yet. Download it from nodejs.org (the LTS version) — install it, then come back and run the line above again. The whole thing takes about 3 minutes.
->
-> **Step 3 — Save and run the capture script**
-> I'll give you the script in the next message. Save it as `capture.js` on your Desktop, then run:
->
-> ```
-> node ~/Desktop/capture.js YOUR_APP_URL ./screenshots
-> ```
->
-> Replace `YOUR_APP_URL` with your actual app URL.
->
-> **Step 4 — Upload the screenshots**
-> Drag the contents of the `screenshots` folder into this chat. I'll evaluate from there.
->
-> Ready to start? I'll send you the script now."
-
----
-
-Immediately follow with the full contents of `/capture/capture.js` in a code block so the user can copy-paste it directly into a text editor and save it.
-
-If they hit any error at any step, help them troubleshoot inline — common issues are: `npx not found` (Node.js not installed), `permission denied` (Mac: prefix command with `sudo `), `cannot find module` (wrong directory — make sure they're running from where `capture.js` was saved).
-
-If they explicitly cannot run anything (no computer access, on a phone, etc.), only then fall back to:
-1. Manual screenshots — ask them to capture 6–8 key screens covering the main flow and drop them into the chat
-2. Description-based evaluation as a last resort — flag conservative scoring throughout
-
-**Bonus for Lovable apps:** Lovable projects sync to GitHub. Offer this as an alternative to the capture script:
-
-> "If your Lovable project is connected to GitHub, I can analyse the source code directly — component names, state management, routing, and context usage all carry IUI signal. It's often richer than screenshots for certain dimensions. Share the repo URL if you'd like to try that route instead."
-
----
-
-#### Path 4 — Described interface (no visual)
-
-If no URL or image is provided, evaluate from description. Flag clearly that all scores are inferred from description alone and conservative scoring applies throughout.
-
----
-
-### 3c: State your evidence base before scoring
+### 3c: State your evidence base and surface evidence gaps before scoring
 
 Before moving to Step 4, always state in one sentence what evidence you are working from:
 
 - *"Evaluating from 8 screenshots covering onboarding through feedback screens."*
-- *"Evaluating from Figma API node tree — behaviour is inferred from design intent."*
-- *"Evaluating from HTML structure only — client-side content not accessible."*
+- *"Evaluating from 6 screenshots plus the PRD and persona document."*
 - *"Evaluating from user description — all scores are inferred and conservatively applied."*
+
+**Then run the evidence-gap check.** Screenshots capture states; adaptive behaviour lives in the transitions *between* states. Review the frames for moments where the system announces or implies a behaviour you cannot actually see — a difficulty change, a personalised result, an adaptive redirect, a recommendation whose follow-on is off-screen. For each such moment that would materially affect a dimension score or a recommendation, ask the user what actually happened rather than inferring it.
+
+Rules for the gap check:
+
+- Ask **at most 3–5 questions**, in a single conversational message, ordered by how much the answer affects scoring. Skip the check entirely if there are no material gaps.
+- Each question must point at a specific frame and a specific unobserved behaviour: *"Frame 12 shows 'Let's make this a bit harder' — what actually changed in the exercises after that message?"*
+- If the user answers, treat the answer as **user-confirmed evidence** — it may be used anywhere observed evidence may be used.
+- If the user doesn't know or doesn't answer, treat the behaviour as **unobserved**: score conservatively on that point and describe it in the report only in hedged form (*"the screenshots do not show what the harder format is"*). Never substitute a plausible-sounding specific.
+
+This check happens once, here — do not scatter clarifying questions through later steps.
 
 ---
 
@@ -224,6 +132,14 @@ The seven dimensions:
 7. **Proactivity & Task Support** — does the interface anticipate user needs and reduce effort?
 
 Score each dimension 0–5. For static prototypes, infer intent from design signals (labels, IA, copy, affordances) and flag assumptions explicitly.
+
+**Evidence tiers — apply to every factual claim.** While scoring, internally classify each claim about the interface as one of:
+
+1. **Observed** — directly visible in a frame (UI copy, an affordance, a layout element). May be stated as fact anywhere.
+2. **User-confirmed** — supplied or verified by the user, including answers from the 3c gap check. May be stated as fact anywhere.
+3. **Inferred** — plausible but not visible or confirmed. May inform a score (conservatively), but must be written in hedged language wherever it appears (*"the escalation message implies a format change, though the frames don't show what it is"*), and must **never** appear as a specific fact inside a recommendation, verdict, or sketch. If an inferred detail feels important enough to state specifically, that is the signal it belonged in the 3c gap check — ask, don't invent.
+
+The failure mode this prevents: describing an unobserved behaviour with invented specificity (e.g. naming an exact format change no frame shows). A report that penalises interfaces for unexplained decisions must not make unexplained inferences of its own.
 
 ---
 
@@ -254,7 +170,7 @@ If any score feels off, or you think I've missed something visible in the interf
 
 ---
 
-Wait for the user to respond. If they approve, proceed to Step 6. If they push back on a score, revise it, briefly explain the adjustment, and present the updated table once more before generating.
+Wait for the user to respond. Where the interactive option tool is available, offer the checkpoint as tappable options — "Scores look right — write the report" / "I want to push back on a score" — with pushback details arriving as a typed message. If they approve, proceed to Step 6. If they push back on a score, revise it, briefly explain the adjustment, and present the updated table once more before generating.
 
 ---
 
@@ -339,6 +255,16 @@ Generate a Python + ReportLab script and run it via `bash_tool`. The PDF must in
 ```python
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+# FONTS — mandatory. Base-14 Helvetica cannot render diacritics
+# (Heričko, Höök, Šumak print as ■ boxes). Register DejaVu and use it everywhere:
+pdfmetrics.registerFont(TTFont('DVS', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
+pdfmetrics.registerFont(TTFont('DVS-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('DVS-Oblique', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf'))
+# Every ParagraphStyle, TableStyle FONTNAME, and every String() in a Drawing
+# must use DVS / DVS-Bold / DVS-Oblique. Never Helvetica, anywhere.
 
 PAGE_W, PAGE_H = A4
 LM = RM = 20 * mm
@@ -349,6 +275,8 @@ USABLE_W = PAGE_W - LM - RM          # ~481 pt — never exceed in any Table
 GUTTER  = 10
 PANEL_W = (USABLE_W - GUTTER) / 2    # ~236 pt — sketch panel width
 PANEL_H = 160                          # pt — fixed sketch height
+PANEL_PAD = 8                          # pt — inner padding on every panel side
+LINE_H  = 12                           # pt — fixed line grid inside panels
 ```
 
 **Table rules:**
@@ -378,7 +306,36 @@ def RoundRect(x, y, w, h, radius=3, fillColor=None, strokeColor=None, strokeWidt
 ```
 
 - Wrap each `Drawing` in a `Flowable` subclass using `renderPDF.draw()`
+- **All panel text must go through a wrap helper — never place raw unwrapped `String`s.** Text laid out at arbitrary coordinates is the cause of the ragged, overflowing sketches this rule exists to prevent:
+
+```python
+def panel_text(drawing, x0, y_top, text, font='DVS', size=8, color=None, max_w=None):
+    """Wrap text to the panel width and lay lines on the LINE_H grid.
+    x0 = panel x + PANEL_PAD; max_w defaults to PANEL_W - 2*PANEL_PAD.
+    Returns the y of the next free line."""
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    from reportlab.graphics.shapes import String
+    max_w = max_w or (PANEL_W - 2 * PANEL_PAD)
+    words, line, lines = text.split(), '', []
+    for w in words:
+        trial = (line + ' ' + w).strip()
+        if stringWidth(trial, font, size) <= max_w: line = trial
+        else: lines.append(line); line = w
+    lines.append(line)
+    y = y_top
+    for ln in lines:
+        drawing.add(String(x0, y, ln, fontName=font, fontSize=size,
+                           fillColor=color or colors.HexColor('#333B47')))
+        y -= LINE_H
+    return y
+```
+
+- Budget panel content before drawing: at `LINE_H = 12` a 160 pt panel fits ~11 lines including the title bar — plan each panel's elements to that budget and shorten copy rather than letting it collide or overflow
+- Keep every element inside `[x_panel + PANEL_PAD, x_panel + PANEL_W - PANEL_PAD]`; nothing may cross the gutter between panels
+- Wrap each improvement block — heading, rationale paragraphs, BEFORE/AFTER label table, and sketch — in `KeepTogether([...])` so a block never splits across a page break; if it cannot fit on the current page it moves whole to the next
 - Sketch content must be tailored to the specific interface being evaluated — not generic wireframes
+- **BEFORE panels may only depict what is observed:** UI copy and elements reproduced from the actual frames, or user-confirmed details. Never draw a "before" state containing invented specifics.
+- **AFTER panels are proposals** — new copy and elements are expected, but any *claim about current system behaviour* embedded in them (what triggers what, what changes to what) must be observed or user-confirmed, or phrased as a proposal (*"e.g. …"*) rather than a description.
 - Add a two-cell 'BEFORE / AFTER' label table above each sketch
 
 **Colour palette:**
@@ -392,10 +349,29 @@ RED        = #CC4A3C   (before bars)
 
 **Footer:**
 - Page number centred
-- "IUI Evaluator v1.0 | literature-grounded rubric" right-aligned
+- "IUI Evaluator v1.1 | literature-grounded rubric" right-aligned
 - Implemented via `onFirstPage` / `onLaterPages` callbacks
 
-Save to `/mnt/user-data/outputs/iui-evaluation-report.pdf`. Run via `bash_tool`, confirm success, then call `present_files`.
+Save to `/mnt/user-data/outputs/iui-evaluation-report.pdf` and run via `bash_tool`.
+
+### 6c: Visual QA — mandatory before delivering
+
+A PDF that has not been looked at must never be delivered. After generating, render every page to images and inspect each one:
+
+```bash
+pdftoppm -jpeg -r 80 /mnt/user-data/outputs/iui-evaluation-report.pdf /tmp/qa_page
+```
+
+View each `/tmp/qa_page-*.jpg` and check:
+
+- **No ■ / missing-glyph boxes anywhere** — if present, a style is still using Helvetica; fix the font registration
+- **No text overflowing a panel, cell, or page margin**, and no text colliding with another element
+- **BEFORE/AFTER label bars flush with their panels** — same width, no offset
+- **No orphaned fragments** — a page carrying a single stray paragraph means spacing or KeepTogether needs adjusting
+- **Tables inside margins** with no column spilling past `USABLE_W`
+- **Consistent spacing** between sections across pages
+
+Fix any failure in the script, regenerate, and re-render. Repeat until every page passes. Only then call `present_files`. This loop is not optional — it is the difference between a report that looks designed and one that looks generated.
 
 ---
 
@@ -406,3 +382,4 @@ Save to `/mnt/user-data/outputs/iui-evaluation-report.pdf`. Run via `bash_tool`,
 - **Calibrate to domain.** Missing transparency in a health interface is more serious than in a consumer app.
 - **Persona is a lens, not a constraint.** Score universally; contextualise through the persona in the improvements section.
 - **Cite evidence, not impressions.** Every score must reference something visible or inferable — a label, affordance, copy, or missing element.
+- **Ask, don't invent.** When a behaviour is announced but not shown, the correct move is a 3c gap-check question, not a plausible guess. Unresolved gaps stay hedged all the way through the PDF.

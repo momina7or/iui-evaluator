@@ -77,9 +77,9 @@ The evaluation workflow includes two confirmation checkpoints: one before scorin
 
 ---
 
-### Working with Lovable, Bolt, Figma Make, or any live URL?
+### Working with a live app or prototype?
 
-These apps render client-side — the page source is empty until a browser runs them. The simplest approach: open the app in your browser, take 6–8 screenshots covering the main flow with `Cmd + Shift + 4` (Mac) or `Windows + Shift + S` (Windows), and upload them here.
+Open it in your browser, take 6–8 screenshots covering the main flow with `Cmd + Shift + 4` (Mac) or `Windows + Shift + S` (Windows), and upload them here. Screenshots and supporting documentation are the only inputs — the skill never fetches URLs.
 
 ---
 
