@@ -199,7 +199,7 @@ Always show both raw score and percentage: e.g. **24/35 (69%) — Developing IUI
 
 ## Notes on Evaluating Static Prototypes vs. Live UIs
 
-When evaluating from a screenshot, Figma prototype, or static mockup:
+When evaluating from a screenshot or static mockup:
 
 - **Infer intent** where interaction is implied but not demonstrable (e.g. a "personalised feed" label implies user modelling intent even if behaviour can't be tested)
 - **Flag assumptions** explicitly — note when a score reflects inferred behaviour rather than observed behaviour
