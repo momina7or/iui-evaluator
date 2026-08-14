@@ -10,7 +10,7 @@ This rubric draws on the following bodies of work:
 - **Brdnik, Heričko & Šumak (2022)** — systematic mapping study of 211 IUI papers (2012–2022); identifies adaptation, representation, and intelligence as the three core IUI characteristics.
 - **Lavie & Meyer (2010)** — benefits and costs of adaptive UIs cannot be evaluated in isolation; must account for system ecology.
 - **Findlater & Gajos (2009)** — adaptive mechanisms may improve one dimension while increasing cognitive/perceptual load along another.
-- **Springer (2015) — "Toward Usable IUI"** — identifies Controllability, Predictability, and Transparency as paramount IUI usability criteria.
+- **Mezhoudi, Khaddam & Vanderdonckt (2015) — "Toward Usable IUI"** — identifies Controllability, Predictability, and Transparency as paramount IUI usability criteria.
 - **Affective Computing / Multimodality literature** — naturalness, context-fitness, multimodal input/output, emotional responsiveness.
 
 ---
@@ -77,7 +77,7 @@ This rubric draws on the following bodies of work:
 ### Dimension 4: Transparency & Explainability
 *Can the user understand why the interface is behaving as it is?*
 
-**What to look for (per Höök 1999, Springer 2015):**
+**What to look for (per Höök 1999, Mezhoudi et al. 2015):**
 - Explanations for automated decisions or recommendations
 - Visible reasoning or rationale (not black-box outputs)
 - Feedback when the system makes inferences or predictions
@@ -96,7 +96,7 @@ This rubric draws on the following bodies of work:
 ### Dimension 5: User Control & Controllability
 *Can the user override, correct, or steer system behaviour?*
 
-**What to look for (per Jameson 2003, Springer 2015):**
+**What to look for (per Jameson 2003, Mezhoudi et al. 2015):**
 - Undo/redo and error recovery affordances
 - Ability to correct system inferences or predictions
 - User-driven vs. system-driven adaptation balance
