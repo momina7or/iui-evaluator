@@ -6,7 +6,7 @@ description: >
 
 # IUI Evaluator Skill
 
-Evaluate UI screenshots and prototypes against Intelligent User Interface (IUI) criteria drawn from the academic literature (Maybury & Wahlster 1998; Jameson 2003; Höök 1999; Brdnik et al. 2022; Springer 2015).
+Evaluate UI screenshots and prototypes against Intelligent User Interface (IUI) criteria drawn from the academic literature (Maybury & Wahlster 1998; Jameson 2003; Höök 1999; Brdnik et al. 2022; Mezhoudi et al. 2015).
 
 Read `/references/iui-rubric.md` before scoring — it contains the full dimension anchors, domain weighting guidance, and band thresholds.
 
@@ -334,6 +334,8 @@ def panel_text(drawing, x0, y_top, text, font='DVS', size=8, color=None, max_w=N
 - Keep every element inside `[x_panel + PANEL_PAD, x_panel + PANEL_W - PANEL_PAD]`; nothing may cross the gutter between panels
 - Wrap each improvement block — heading, rationale paragraphs, BEFORE/AFTER label table, and sketch — in `KeepTogether([...])` so a block never splits across a page break; if it cannot fit on the current page it moves whole to the next
 - Sketch content must be tailored to the specific interface being evaluated — not generic wireframes
+- **Every panel must be a drawn wireframe, never a text box.** Each BEFORE and AFTER panel must contain a minimum of three drawn UI primitives — a screen or card frame, plus elements such as buttons (rounded rects with centred labels), message bubbles, chips, input fields, progress/score bars, toggles, or nav bars — reproducing the actual layout of the relevant screen. Wrapped sentences via `panel_text` are for short labels and one-line annotations *on* these elements, not a substitute for them. A panel consisting only of quoted copy and captions in a coloured box is a QA failure.
+- The evidence rules and the wireframe requirement do not conflict: BEFORE panels *reproduce observed chrome* — the Continue button, the Duo message bubble, the score bar are all visible in the frames and should be drawn as seen. AFTER panels redraw the same chrome with the proposed element added (a second button, a subtext line, a chip row), so the reader can see exactly what changes and where.
 - **BEFORE panels may only depict what is observed:** UI copy and elements reproduced from the actual frames, or user-confirmed details. Never draw a "before" state containing invented specifics.
 - **AFTER panels are proposals** — new copy and elements are expected, but any *claim about current system behaviour* embedded in them (what triggers what, what changes to what) must be observed or user-confirmed, or phrased as a proposal (*"e.g. …"*) rather than a description.
 - Add a two-cell 'BEFORE / AFTER' label table above each sketch
@@ -367,6 +369,7 @@ View each `/tmp/qa_page-*.jpg` and check:
 - **No ■ / missing-glyph boxes anywhere** — if present, a style is still using Helvetica; fix the font registration
 - **No text overflowing a panel, cell, or page margin**, and no text colliding with another element
 - **BEFORE/AFTER label bars flush with their panels** — same width, no offset
+- **Each panel is a drawn wireframe** — visible frames, buttons, bubbles, or bars; a panel that renders as sentences in a coloured box fails QA and must be redrawn
 - **No orphaned fragments** — a page carrying a single stray paragraph means spacing or KeepTogether needs adjusting
 - **Tables inside margins** with no column spilling past `USABLE_W`
 - **Consistent spacing** between sections across pages

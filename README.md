@@ -151,8 +151,8 @@ The seven dimensions and their scoring anchors are grounded in:
 - **Höök (1999)** — *Designing and Evaluating Intelligent User Interfaces* — early articulation of transparency, predictability, and user control as IUI quality criteria
 - **Brdnik, Heričko & Šumak (2022)** — *IUI and Their Evaluation: A Systematic Mapping Study* — synthesis of 211 IUI papers (2012–2022); adaptation, representation, and intelligence as the three defining IUI characteristics
 - **Lavie & Meyer (2010)** — *Benefits and Costs of Adaptive User Interfaces* — why adaptive features cannot be evaluated in isolation from system ecology
-- **Findlater & Gajos (2009)** — *Design Space and Evaluation Challenges of Adaptive Graphical Menus* — how adaptive mechanisms can increase cognitive load even when improving task performance
-- **Springer (2015)** — *Toward Usable Intelligent User Interfaces* — controllability, predictability, and transparency as the three paramount IUI usability criteria
+- **Findlater & Gajos (2009)** — *Design Space and Evaluation Challenges of Adaptive Graphical User Interfaces* — how adaptive mechanisms can increase cognitive load even when improving task performance
+- **Mezhoudi, Khaddam & Vanderdonckt (2015)** — *Toward Usable Intelligent User Interface* (HCI International 2015, LNCS 9170) — controllability, predictability, and transparency as the three paramount IUI usability criteria
 
 The full rubric with scoring anchors, domain-specific weighting guidance, and notes on evaluating static prototypes is in [`references/iui-rubric.md`](references/iui-rubric.md).
 
